@@ -91,7 +91,6 @@ async def upload_file(
 
 @app.get("/procesar")
 def procesar():
-
     import os
     from backend.services.etl_service import procesar_excel, obtener_year_desde_excel
     from backend.services.query_service import year_ya_existe
@@ -124,8 +123,7 @@ def procesar():
         "total": len(registros)
     }
 
-@app.get("/years")
-def get_years():
+
 
     from sqlalchemy import text
 
@@ -139,6 +137,31 @@ def get_years():
     return {
         "years": years
     }
+# -------------------------------------
+@app.get("/years")
+def get_years():
+    try:
+        with engine.connect() as conn:
+
+            # 🔥 validar si existe tabla
+            table_check = conn.execute(
+                text("SELECT name FROM sqlite_master WHERE type='table' AND name='datos'")
+            ).fetchone()
+
+            if not table_check:
+                return {"years": []}
+
+            result = conn.execute(
+                text("SELECT DISTINCT year FROM datos WHERE year IS NOT NULL ORDER BY year DESC")
+            )
+
+            years = [row[0] for row in result]
+
+        return {"years": years}
+
+    except Exception as e:
+        print("ERROR /years:", str(e))
+        return {"years": []}
 # -------------------------------------
 
 @app.get("/resultados")
