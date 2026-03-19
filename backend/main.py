@@ -7,8 +7,13 @@ from backend.database.database import engine
 import math
 import os
 from backend.services.query_service import year_ya_existe
+from backend.routes.dashboard_routes import router as dashboard_router
+
+
 
 app = FastAPI()
+
+app.include_router(dashboard_router)
 
 # 🔥 CORS
 app.add_middleware(
