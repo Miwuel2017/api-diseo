@@ -20,60 +20,68 @@ def limpiar_columnas(df):
     return df
 
 def procesar_excel(ruta_archivo):
-
-    import pandas as pd
-    from backend.database.database import engine
-
     excel = pd.ExcelFile(ruta_archivo)
 
     dataframes = []
     columnas_base = None
 
-    for i, hoja in enumerate(excel.sheet_names):
+    for hoja in excel.sheet_names:
 
         try:
             df = pd.read_excel(ruta_archivo, sheet_name=hoja)
 
+            # 🔥 limpiar columnas SIEMPRE
+            df.columns = df.columns.str.strip()
+
+            # 🔥 ignorar hojas vacías
+            if df.empty or df.shape[1] == 0:
+                continue
+
+            # 🔥 validar columna clave
+            if "Fechaing" not in df.columns:
+                print(f"Hoja {hoja} ignorada: no tiene 'Fechaing'")
+                continue
+
+            # 🔥 convertir fecha
+            df["Fechaing"] = pd.to_datetime(
+                df["Fechaing"],
+                errors="coerce",
+                dayfirst=True
+            )
+
+            # eliminar filas sin fecha válida
+            df = df.dropna(subset=["Fechaing"])
+
             if df.empty:
                 continue
 
-            # 🔥 LIMPIAR COLUMNAS SOLO EN LA PRIMERA
+            # 🔥 agregar año
+            df["year"] = df["Fechaing"].dt.year
+
+            # 🔥 estructura base
             if columnas_base is None:
-                df = limpiar_columnas(df)
                 columnas_base = df.columns
             else:
-                df.columns = columnas_base
-
-            # 🔥 VALIDAR Fechaing
-            if "Fechaing" not in df.columns:
-                raise ValueError("No existe columna Fechaing")
-
-            # 🔥 CONVERTIR FECHA
-            df["Fechaing"] = pd.to_datetime(df["Fechaing"], errors="coerce", dayfirst=True)
-
-            # 🔥 AGREGAR YEAR (AQUÍ ES DONDE DEBE IR)
-            df["year"] = df["Fechaing"].dt.year
+                df = df[columnas_base]
 
             dataframes.append(df)
 
         except Exception as e:
-            print(f"Error leyendo hoja {hoja}: {e}")
+            print(f"Error en hoja {hoja}: {e}")
 
+    # 🔥 VALIDACIÓN FINAL
     if not dataframes:
-        raise Exception("El archivo Excel no contiene datos válidos")
+        raise Exception("El archivo no tiene datos válidos o no contiene la columna Fechaing")
 
-    # 🔥 UNIR TODO
     df_final = pd.concat(dataframes, ignore_index=True)
 
-    # 🔥 LIMPIEZAS
-    df_final = df_final.loc[:, ~df_final.columns.duplicated()]
     df_final = df_final.dropna(how="all")
 
-    # 🔥 GUARDAR
+    # 🔥 guardar en BD
     df_final.to_sql(
         "datos",
         engine,
-        if_exists="replace",
+        if_exists="append",   # ⚠️ CAMBIADO (antes replace)
         index=False,
         chunksize=10000
     )
