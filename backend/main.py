@@ -1,28 +1,37 @@
-from fastapi import FastAPI
-from fastapi import UploadFile, File
-from backend.services.query_service import get_all_data, get_metricas
+from fastapi import FastAPI, UploadFile, File
+from backend.services.query_service import get_metricas
 from backend.routes.upload_routes import router as upload_router
 from fastapi.middleware.cors import CORSMiddleware
-from backend.routes import upload_routes
-from sqlalchemy import create_engine, text
+from sqlalchemy import text
 from backend.database.database import engine
 import math
+import os
 
 app = FastAPI()
+
+# 🔥 CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 🔥 Detectar entorno
+IS_RENDER = os.getenv("RENDER") is not None
+
+UPLOAD_DIR = "/tmp/uploads" if IS_RENDER else "uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
 app.include_router(upload_router)
+
+# -------------------------------------
 
 @app.get("/")
 def home():
     return {"mensaje": "API funcionando"}
 
-
-
+# -------------------------------------
 
 @app.get("/datos")
 def obtener_datos():
@@ -46,24 +55,52 @@ def obtener_datos():
         "data": rows
     }
 
+# -------------------------------------
+
 @app.get("/metricas")
 def metricas():
     return get_metricas()
 
+# -------------------------------------
+
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
 
-    os.makedirs("uploads", exist_ok=True)  # 👈 clave
+    file_path = os.path.join(UPLOAD_DIR, file.filename)
 
     contents = await file.read()
 
-    with open(f"uploads/{file.filename}", "wb") as f:
+    with open(file_path, "wb") as f:
         f.write(contents)
 
     return {
         "status": "ok",
         "archivo": file.filename
     }
+
+# -------------------------------------
+
+@app.get("/procesar")
+def procesar():
+
+    from backend.services.etl_service import procesar_excel
+
+    archivos = os.listdir(UPLOAD_DIR)
+
+    if not archivos:
+        return {"error": "No hay archivos para procesar"}
+
+    ruta = os.path.join(UPLOAD_DIR, archivos[0])
+
+    registros = procesar_excel(ruta)
+
+    return {
+        "status": "procesado",
+        "archivo": archivos[0],
+        "total": len(registros)
+    }
+
+# -------------------------------------
 
 @app.get("/resultados")
 def resultados():
@@ -84,7 +121,8 @@ def resultados():
         "dataset": "parametros_sicoe",
         "total_registros": total,
         "total_columnas": total_columnas
-    }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+    }
 
+# -------------------------------------
 
-app.include_router(upload_routes.router)
+app.include_router(upload_router)
