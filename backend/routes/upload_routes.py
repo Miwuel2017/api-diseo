@@ -24,3 +24,4 @@ async def upload_file(file: UploadFile = File(...)):
         "archivo": file.filename,
         "registros_insertados": registros
     }
+

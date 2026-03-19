@@ -53,6 +53,8 @@ def metricas():
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
 
+    os.makedirs("uploads", exist_ok=True)  # 👈 clave
+
     contents = await file.read()
 
     with open(f"uploads/{file.filename}", "wb") as f:
