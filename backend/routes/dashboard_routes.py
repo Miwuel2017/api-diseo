@@ -94,3 +94,65 @@ def enemigo():
         """)).mappings().all()
 
     return result
+
+@router.get("/bloque-operacional")
+def bloque_operacional():
+
+    with engine.connect() as conn:
+
+        result = conn.execute(text("""
+            SELECT 
+                Boletin,
+                Hecho,
+                Accion,
+                Tipo,
+                Subtipo,
+                "Fecha Hecho",
+                Mes,
+                Radiograma,
+                "Ampliación",
+                "Detalles Del Lugar",
+                "Ambiente Operacional",
+                Municipio,
+                Dprtmnto,
+                Division,
+                Brigada,
+                Batallon,
+                Enemigo,
+                Subestructura,
+                "Ord. Batallón",
+                "Acción Enemiga",
+                "Obs. Detal. Opera.",
+                Clase,
+                Cantidad,
+                "Unidad Med",
+                Complemento1,
+                Identificacion,
+                Edad,
+                Sexo,
+                "Tpo Organizacion",
+                Judicializado
+            FROM datos
+            LIMIT 500
+        """)).mappings().all()
+
+    # 🔥 AQUÍ VIENE LO IMPORTANTE → ENCAPSULADO
+    estructura = {}
+
+    for row in result:
+
+        b = row["Boletin"]
+        h = row["Hecho"]
+        a = row["Accion"]
+        t = row["Tipo"]
+        s = row["Subtipo"]
+
+        estructura.setdefault(b, {})
+        estructura[b].setdefault(h, {})
+        estructura[b][h].setdefault(a, {})
+        estructura[b][h][a].setdefault(t, {})
+        estructura[b][h][a][t].setdefault(s, [])
+
+        estructura[b][h][a][t][s].append(dict(row))
+
+    return estructura
