@@ -1,9 +1,6 @@
-from fastapi import APIRouter
-from sqlalchemy import text
-from backend.database.database import engine
-
 from fastapi import APIRouter, Depends
 from sqlalchemy import text
+from backend.database.database import engine
 from typing import Optional
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
@@ -99,8 +96,10 @@ def enemigo():
 
     return result
 
-#----------------------------------------------------------
 
+# ─────────────────────────────────────────────
+# 🧠 FILTROS BASE
+# ─────────────────────────────────────────────
 def filtros_comunes(
     hecho: Optional[str] = None,
     accion: Optional[str] = None,
@@ -143,7 +142,11 @@ def construir_where(filtros: dict):
     where = "WHERE " + " AND ".join(clausulas) if clausulas else ""
     return where, params
 
-@router.get("/dashboard/kpis")
+
+# ─────────────────────────────────────────────
+# 📊 KPIS
+# ─────────────────────────────────────────────
+@router.get("/kpis")
 def kpis(filtros: dict = Depends(filtros_comunes)):
 
     where, params = construir_where(filtros)
@@ -151,7 +154,7 @@ def kpis(filtros: dict = Depends(filtros_comunes)):
     sql = f"""
     SELECT
         COUNT(*) as total_hechos,
-        SUM(Cantidad) as total_cantidad,
+        SUM(COALESCE(Cantidad,0)) as total_cantidad,
         COUNT(DISTINCT Dprtmnto) as departamentos,
         COUNT(DISTINCT Municipio) as municipios
     FROM datos
@@ -168,6 +171,10 @@ def kpis(filtros: dict = Depends(filtros_comunes)):
         "municipios": row["municipios"] or 0,
     }
 
+
+# ─────────────────────────────────────────────
+# 📊 AGRUPACIÓN
+# ─────────────────────────────────────────────
 CAMPOS_PERMITIDOS = {
     "hecho": "Hecho",
     "accion": "Accion",
@@ -177,7 +184,7 @@ CAMPOS_PERMITIDOS = {
     "municipio": "Municipio",
 }
 
-@router.get("/dashboard/agrupacion")
+@router.get("/agrupacion")
 def agrupacion(
     campo: str,
     filtros: dict = Depends(filtros_comunes),
@@ -203,7 +210,11 @@ def agrupacion(
 
     return {"data": rows}
 
-@router.get("/dashboard/registros")
+
+# ─────────────────────────────────────────────
+# 📋 REGISTROS (TABLA)
+# ─────────────────────────────────────────────
+@router.get("/registros")
 def registros(
     page: int = 1,
     limit: int = 50,
