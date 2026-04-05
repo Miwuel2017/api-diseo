@@ -150,7 +150,7 @@ def get_years():
 
             # 🔥 validar si existe tabla
             table_check = conn.execute(
-                text("SELECT name FROM sqlite_master WHERE type='table' AND name='datos'")
+                text("SELECT table_name FROM information_schema.tables WHERE table_name = 'datos'")
             ).fetchone()
 
             if not table_check:
@@ -179,7 +179,7 @@ def resultados():
         ).scalar()
 
         columnas = conn.execute(
-            text("PRAGMA table_info(datos)")
+            text("SELECT column_name FROM information_schema.columns WHERE table_name = 'datos'")
         ).fetchall()
 
         total_columnas = len(columnas)

@@ -31,7 +31,7 @@ def tendencia():
     with engine.connect() as conn:
         result = conn.execute(text("""
             SELECT 
-                strftime('%Y-%m', Fechaing) as periodo,
+                TO_CHAR(Fechaing, 'YYYY-MM') as periodo,
                 COUNT(*) as total
             FROM datos
             GROUP BY periodo
@@ -132,12 +132,12 @@ def construir_where(filtros: dict):
             params[k] = filtros[k]
 
     if filtros.get("year"):
-        clausulas.append("strftime('%Y', \"Fecha Hecho\") = :year")
-        params["year"] = filtros["year"]
+        clausulas.append("EXTRACT(YEAR FROM \"Fecha Hecho\") = :year")
+        params["year"] = int(filtros["year"])  # Convert to int for comparison
 
     if filtros.get("month"):
-        clausulas.append("strftime('%m', \"Fecha Hecho\") = :month")
-        params["month"] = filtros["month"]
+        clausulas.append("EXTRACT(MONTH FROM \"Fecha Hecho\") = :month")
+        params["month"] = int(filtros["month"])
 
     where = "WHERE " + " AND ".join(clausulas) if clausulas else ""
     return where, params
