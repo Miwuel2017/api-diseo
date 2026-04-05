@@ -1,27 +1,38 @@
 from fastapi import APIRouter, UploadFile, File
-import shutil
 import os
 from backend.services.etl_service import procesar_excel
 
 router = APIRouter()
 
-UPLOAD_FOLDER = "uploads"
+IS_RENDER = os.getenv("RENDER") is not None
+UPLOAD_FOLDER = "/tmp/uploads" if IS_RENDER else "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
 @router.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
+    file_path = os.path.join(UPLOAD_FOLDER, file.filename)
 
-    ruta_guardado = os.path.join(UPLOAD_FOLDER, file.filename)
+    try:
+        print(f"📂 Guardando archivo en: {file_path}")
 
-    with open(ruta_guardado, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+        with open(file_path, "wb") as buffer:
+            while True:
+                chunk = await file.read(1024 * 1024)
+                if not chunk:
+                    break
+                buffer.write(chunk)
 
-    registros = procesar_excel(ruta_guardado)
+        registros = procesar_excel(file_path)
 
-    return {
-        "mensaje": "Archivo cargado correctamente",
-        "archivo": file.filename,
-        "registros_insertados": registros
-    }
+        return {
+            "status": "ok",
+            "archivo": file.filename,
+            "ruta": file_path,
+            "registros_insertados": registros
+        }
+
+    except Exception as e:
+        print("ERROR UPLOAD:", str(e))
+        return {"error": str(e)}
 

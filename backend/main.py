@@ -159,5 +159,3 @@ def resultados():
     }
 
 # -------------------------------------
-
-app.include_router(upload_router)
