@@ -81,9 +81,9 @@ def procesar_excel(ruta_archivo):
     df_final.to_sql(
         "datos",
         engine,
-        if_exists="append",   # ⚠️ CAMBIADO (antes replace)
+        if_exists="append",  # 🔥 cambiar de replace a append
         index=False,
-        chunksize=10000
+        chunksize=1000
     )
 
     return len(df_final)
