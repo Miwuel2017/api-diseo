@@ -129,21 +129,6 @@ def procesar():
         "year": year,
         "total": len(registros)
     }
-
-
-
-    from sqlalchemy import text
-
-    with engine.connect() as conn:
-        result = conn.execute(
-            text("SELECT DISTINCT year FROM datos WHERE year IS NOT NULL")
-        ).fetchall()
-
-    years = [row[0] for row in result]
-
-    return {
-        "years": years
-    }
 # -------------------------------------
 @app.get("/years")
 def get_years():
