@@ -16,7 +16,7 @@ app = FastAPI()
 app.include_router(dashboard_router)
 
 # 🔥 CORS
-allowed_origins = [origin.strip() for origin in os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173").split(",")]
+allowed_origins = [origin.strip() for origin in os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173,https://n-pgsqj5lhd6tq7d5bnzpqljzmdtmu5naqfo7yzsy-0lu-script.googleusercontent.com").split(",")]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
@@ -74,31 +74,6 @@ def obtener_datos():
 @app.get("/metricas")
 def metricas():
     return get_metricas()
-
-# -------------------------------------
-
-from fastapi import Form
-
-@app.post("/upload")
-async def upload_file(
-    file: UploadFile = File(...),
-    year: str = Form(...),
-    tipo: str = Form(...)
-):
-
-    file_path = os.path.join(UPLOAD_DIR, file.filename)
-
-    contents = await file.read()
-
-    with open(file_path, "wb") as f:
-        f.write(contents)
-
-    return {
-        "status": "ok",
-        "archivo": file.filename,
-        "year": year,
-        "tipo": tipo
-    }
 
 # -------------------------------------
 
