@@ -16,7 +16,7 @@ app = FastAPI()
 app.include_router(dashboard_router)
 
 # 🔥 CORS
-allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173").split(",")
+allowed_origins = [origin.strip() for origin in os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173").split(",")]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
@@ -38,6 +38,12 @@ app.include_router(upload_router)
 @app.get("/")
 def home():
     return {"mensaje": "API funcionando"}
+
+# -------------------------------------
+
+@app.get("/cors-test")
+def cors_test():
+    return {"allowed_origins": allowed_origins}
 
 # -------------------------------------
 
