@@ -77,45 +77,6 @@ def metricas():
 
 # -------------------------------------
 
-@app.get("/procesar")
-def procesar():
-    try:
-        import os
-        from backend.services.etl_service import procesar_excel, obtener_year_desde_excel
-        from backend.services.query_service import year_ya_existe
-
-        UPLOAD_DIR = "/tmp/uploads"
-
-        archivos = os.listdir(UPLOAD_DIR)
-
-        if not archivos:
-            return {"error": "No hay archivos para procesar"}
-
-        ruta = os.path.join(UPLOAD_DIR, archivos[0])
-
-        # 🔥 1. sacar año del excel
-        year = obtener_year_desde_excel(ruta)
-
-        # 🔥 2. validar duplicado
-        if year_ya_existe(year):
-            return {
-                "status": "duplicado",
-                "msg": f"El año {year} ya fue cargado"
-            }
-
-        # 🔥 3. procesar
-        registros = procesar_excel(ruta)
-
-        return {
-            "status": "procesado",
-            "year": year,
-            "total": len(registros)
-        }
-
-    except Exception as e:
-        print("ERROR /procesar:", str(e))
-        return {"error": str(e)}
-# -------------------------------------
 @app.get("/years")
 def get_years():
     try:
